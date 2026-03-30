@@ -1,0 +1,514 @@
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-lock me-2"></i>Login Required</h5>
+            </div>
+            <div class="modal-body">
+                <p>Enter password to access the Employee Salary Portal</p>
+                <div class="mb-3">
+                    <label for="loginUsername" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="loginUsername" value="Admin-Chuba" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="loginPassword" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" placeholder="Enter password">
+                </div>
+                <div class="alert alert-danger d-none" id="loginError">
+                    Invalid password. Check and try again.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="loginBtn">
+                    <i class="fas fa-sign-in-alt me-1"></i> Login
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Salary Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 20px;
+        }
+        .header-section {
+            background: linear-gradient(to right, #4e54c8, #8f94fb);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .search-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e3e6f0;
+        }
+        .employee-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #4e54c8;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .employee-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        .badge-present {
+            font-size: 0.9em;
+            padding: 8px 15px;
+        }
+        .salary-highlight {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .stats-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4e54c8;
+        }
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .info-badge {
+            background: #e7f4ff;
+            color: #0d6efd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1><i class="fas fa-users me-2"></i>Government Employee Salary Package Portal</h1>
+            <p class="lead mb-0">Internal System • Check Employee Presence in Salary Records</p>
+            <div class="mt-3">
+                <span class="info-badge me-2"><i class="fas fa-database me-1"></i>Emp Salary Package</span>
+                <span class="info-badge" id="dataStatus">Loading data...</span>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="row mb-4" id="statsSection">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalEmployees">0</div>
+                    <div class="stats-label">Total Employees</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalDepartments">0</div>
+                    <div class="stats-label">Departments</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h5><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+                    <p class="mb-0">Search by employee name (partial matches supported) and optionally filter by Date of Birth</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="search-card">
+            <h4><i class="fas fa-search me-2"></i>Search Employee</h4>
+            <form id="searchForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label fw-bold">Employee Name *</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="name" 
+                                   placeholder="Enter full or partial name" required>
+                        </div>
+                        <div class="form-text">Search is case-insensitive. You can enter first name, last name, or part of name.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dob" class="form-label fw-bold">Date of Birth (Optional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            <input type="date" class="form-control" id="dob">
+                        </div>
+                        <div class="form-text">Filter by birth date (YYYY-MM-DD format)</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg me-2">
+                        <span class="spinner-border spinner-border-sm d-none" id="loadingSpinner"></span>
+                        <i class="fas fa-search me-1"></i> Search Employee
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-lg me-2" id="clearBtn">
+                        <i class="fas fa-times me-1"></i> Clear
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" id="exportBtn" style="display: none;">
+                        <i class="fas fa-download me-1"></i> Export Results
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3><i class="fas fa-list-alt me-2"></i>Search Results</h3>
+                <div>
+                    <span class="badge bg-primary p-3 fs-6" id="resultCount">0 employees found</span>
+                    <span class="badge bg-success p-3 fs-6 ms-2 d-none" id="salarySum">Total: ₹0</span>
+                </div>
+            </div>
+            
+            <div id="resultsContainer"></div>
+            
+            <div class="alert alert-warning text-center d-none" id="noResultsAlert">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h4>No employees found</h4>
+                <p>No employees match your search criteria. Try a different name or clear the DOB filter.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-5 text-center text-muted">
+            <hr>
+            <small>
+                <i class="fas fa-shield-alt me-1"></i> Internal Use Only • 
+                <i class="fas fa-server ms-2 me-1"></i> Local Server System •
+                <i class="fas fa-folder ms-2 me-1"></i> Data Source: Salary Package
+            </small>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay d-none" id="fullPageLoading">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h4>Loading Salary Data...</h4>
+            <p>Please wait while we load employee records</p>
+        </div>
+    </div>
+
+    <script>
+       const API_BASE = window.location.origin + '/api';
+let username = 'admin';
+let password = '';
+let authHeader = '';
+        let currentResults = [];
+        
+        // DOM Loaded
+       // DOM Loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Show login modal
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+    loginModal.show();
+    
+    // Focus on password field
+    document.getElementById('loginPassword').focus();
+    
+    // Login button handler
+    document.getElementById('loginBtn').addEventListener('click', function() {
+        password = document.getElementById('loginPassword').value;
+        
+        if (password === 'portal123') {
+            // Set authentication header
+            authHeader = 'Basic ' + btoa(username + ':' + password);
+            
+            // Hide login modal
+            loginModal.hide();
+            
+            // Initialize the portal
+            loadStats();
+            setupEventListeners();
+            setMaxDate();
+        } else {
+            // Show error
+            document.getElementById('loginError').classList.remove('d-none');
+        }
+    });
+    
+    // Allow Enter key to login
+    document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('loginBtn').click();
+        }
+    });
+});        
+        function setupEventListeners() {
+            document.getElementById('searchForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await searchEmployees();
+            });
+            
+            document.getElementById('clearBtn').addEventListener('click', clearSearch);
+            document.getElementById('exportBtn').addEventListener('click', exportResults);
+        }
+        
+        function setMaxDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dob').max = today;
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`, {
+    headers: {
+        'Authorization': authHeader
+    }
+});
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('totalEmployees').textContent = data.stats.total_employees;
+                    document.getElementById('totalDepartments').textContent = data.stats.departments;
+                    document.getElementById('dataStatus').innerHTML = `<i class="fas fa-check-circle me-1"></i> Data Loaded`;
+                    document.getElementById('dataStatus').className = 'info-badge bg-success text-white';
+                    
+                    // Show columns in console for debugging
+                    console.log('Columns found:', data.stats.columns_found);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('dataStatus').innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Data Error`;
+                document.getElementById('dataStatus').className = 'info-badge bg-danger text-white';
+            }
+        }
+        
+        async function searchEmployees() {
+            const name = document.getElementById('name').value.trim();
+            const dob = document.getElementById('dob').value;
+            
+            if (!name) {
+                alert('Please enter an employee name to search');
+                return;
+            }
+            
+            showFullPageLoading(true);
+            
+            try {
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authHeader
+                    },
+                    body: JSON.stringify({ name, dob })
+                });
+                
+                const data = await response.json();
+                currentResults = data.employees || [];
+                displayResults(data);
+                
+                // Show/hide export button
+                document.getElementById('exportBtn').style.display = 
+                    currentResults.length > 0 ? 'inline-block' : 'none';
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error searching employees. Please check if server is running.', 'danger');
+            } finally {
+                showFullPageLoading(false);
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const noResultsAlert = document.getElementById('noResultsAlert');
+            const resultCount = document.getElementById('resultCount');
+            const salarySum = document.getElementById('salarySum');
+            
+            resultsSection.classList.remove('d-none');
+            resultsContainer.innerHTML = '';
+            
+            if (!data.success || !data.employees || data.employees.length === 0) {
+                noResultsAlert.classList.remove('d-none');
+                resultCount.textContent = '0 employees found';
+                salarySum.classList.add('d-none');
+                return;
+            }
+            
+            noResultsAlert.classList.add('d-none');
+            resultCount.textContent = `${data.count} employee(s) found`;
+            
+            // Calculate total salary
+            let totalSalary = 0;
+            currentResults.forEach(emp => {
+                totalSalary += emp.raw_gross || 0;
+            });
+            
+            if (totalSalary > 0) {
+                salarySum.textContent = `Total Salary: ₹${totalSalary.toLocaleString('en-IN')}`;
+                salarySum.classList.remove('d-none');
+            } else {
+                salarySum.classList.add('d-none');
+            }
+            
+            // Display each employee
+            data.employees.forEach(emp => {
+                const empCard = document.createElement('div');
+                empCard.className = 'employee-card';
+                empCard.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1">${emp.full_name}</h4>
+                                    <div class="mb-2">
+                                        <span class="badge bg-primary me-1">${emp.designation}</span>
+                                        <span class="badge bg-secondary me-1">${emp.department}</span>
+                                        <span class="badge bg-info">${emp.cadre}</span>
+                                    </div>
+                                </div>
+                                <span class="badge badge-present bg-success p-3">
+                                    <i class="fas fa-check-circle me-1"></i> PRESENT
+                                </span>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><i class="fas fa-birthday-cake me-2"></i><strong>Date of Birth:</strong> ${emp.dob}</p>
+                                    <p class="mb-1"><i class="fas fa-calendar-plus me-2"></i><strong>Date Joined:</strong> ${emp.doj}</p>
+                                    <p class="mb-1"><i class="fas fa-id-card me-2"></i><strong>Employee ID:</strong> ${emp.sl_no}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><i class="fas fa-university me-2"></i><strong>Bank:</strong> ${emp.bank_name}</p>
+                                    <p class="mb-1"><i class="fas fa-credit-card me-2"></i><strong>Account No:</strong> ${emp.bank_account_no}</p>
+                                    <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i><strong>BSR Code:</strong> ${emp.bsr_code}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 border-start">
+                            <div class="text-center h-100 d-flex flex-column justify-content-center">
+                                <h5 class="text-muted mb-2">Salary Package</h5>
+                                <div class="salary-highlight mb-3">
+                                    ${emp.gross_salary}
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-pin me-1"></i> ${emp.bank_address || 'Address not available'}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                resultsContainer.appendChild(empCard);
+            });
+        }
+        
+        function clearSearch() {
+            document.getElementById('name').value = '';
+            document.getElementById('dob').value = '';
+            document.getElementById('resultsSection').classList.add('d-none');
+            document.getElementById('exportBtn').style.display = 'none';
+        }
+        
+        function exportResults() {
+            if (currentResults.length === 0) {
+                alert('No results to export');
+                return;
+            }
+            
+            // Convert to CSV
+            const headers = ['SL.No', 'Full Name', 'DOB', 'DOJ', 'Designation', 'Department', 'Cadre', 'Bank Account', 'Bank Name', 'Gross Salary'];
+            const csvRows = [
+                headers.join(','),
+                ...currentResults.map(emp => [
+                    emp.sl_no,
+                    `"${emp.full_name}"`,
+                    emp.dob,
+                    emp.doj,
+                    `"${emp.designation}"`,
+                    `"${emp.department}"`,
+                    `"${emp.cadre}"`,
+                    emp.bank_account_no,
+                    `"${emp.bank_name}"`,
+                    emp.gross_salary.replace('₹', '').replace(',', '')
+                ].join(','))
+            ];
+            
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `employee_search_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showAlert('Results exported successfully!', 'success');
+        }
+        
+        function showFullPageLoading(show) {
+            document.getElementById('fullPageLoading').classList.toggle('d-none', !show);
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container').prepend(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
