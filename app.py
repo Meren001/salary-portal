@@ -10,7 +10,9 @@ app = Flask(__name__)
 CORS(app)
 
 # Path to your salary data folder
-DATA_FOLDER = r"C:\Users\HP\Documents\salary-portal"
+import os
+DATA_FOLDER = os.path.join(os.getcwd(), "data")
+file_path = os.path.join(DATA_FOLDER, "Regular Govt Employees details for SGSP and PSP.xlsx")
 salary_data = None
 def mask_account_number(acc):
     """Mask bank account number showing only last 4 digits"""
