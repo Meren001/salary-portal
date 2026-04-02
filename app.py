@@ -130,6 +130,7 @@ def home():
     return render_template('index.html')
 
 @app.route('/api/search', methods=['POST'])
+@require_auth
 def search_employee():
     try:
         data = request.json
